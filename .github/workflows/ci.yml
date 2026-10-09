@@ -1,0 +1,50 @@
+name: Validate
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 4 * * 1'
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.13-alpine
+        env: {POSTGRES_USER: ci, POSTGRES_PASSWORD: ci, POSTGRES_DB: ci}
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U ci -d ci" --health-interval 5s --health-timeout 5s --health-retries 15 --memory 384m --cpus 0.5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with: {python-version: '3.12'}
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check app tests scripts
+      - name: Static security checks
+        run: ruff check app --select S --ignore S101,S104,S105,S106,S107,S110
+      - run: pytest -q
+      - name: PostgreSQL access matrix and persistence
+        run: pytest -q
+        env: {MAYOCSPM_TEST_DATABASE_URL: 'postgresql+psycopg://ci:ci@localhost:5432/ci'}
+      - run: pip-audit -r requirements.txt --progress-spinner off
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t mayocspm:ci .
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {fetch-depth: 0}
+      - name: Install verified Gitleaks
+        run: |
+          curl -fsSLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          curl -fsSLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt
+          grep '  gitleaks_8.30.1_linux_x64.tar.gz$' gitleaks_8.30.1_checksums.txt | sha256sum -c -
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+          rm gitleaks gitleaks_8.30.1_linux_x64.tar.gz gitleaks_8.30.1_checksums.txt
+      - run: bash scripts/check-secrets.sh all
+      - run: gitleaks git . --redact --no-banner

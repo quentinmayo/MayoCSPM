@@ -1,0 +1,5 @@
+# Keep database files on a protected cache/external disk with backups and free-space monitoring.
+services:
+  db:
+    volumes:
+      - ${MAYOCSPM_DATA_PATH:?Select a persistent data directory}/postgres:/var/lib/postgresql/data

@@ -1,0 +1,65 @@
+name: mayocspm
+x-logging: &logging
+  driver: json-file
+  options: {max-size: '10m', max-file: '3'}
+x-app: &app
+  image: mayocspm:local
+  build: .
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  pids_limit: 96
+  tmpfs: ['/tmp:size=64m,mode=1777']
+  restart: unless-stopped
+  logging: *logging
+services:
+  app:
+    <<: *app
+    ports: ['127.0.0.1:${MAYOCSPM_PORT:-8010}:8000']
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8010}
+      DATABASE_URL: postgresql+psycopg://mayocspm:${POSTGRES_PASSWORD:?Run scripts/setup.sh}@db:5432/mayocspm
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Run scripts/setup.sh}
+      BOOTSTRAP_EMAIL: ${BOOTSTRAP_EMAIL:?Run scripts/setup.sh}
+      BOOTSTRAP_PASSWORD: ${BOOTSTRAP_PASSWORD:?Run scripts/setup.sh}
+    volumes: ['app-state:/data']
+    depends_on: {db: {condition: service_healthy}}
+    mem_limit: 384m
+    cpus: 0.5
+  worker:
+    <<: *app
+    command: ['python', '-m', 'app.worker']
+    healthcheck: {disable: true}
+    environment:
+      DATABASE_URL: postgresql+psycopg://mayocspm:${POSTGRES_PASSWORD:?Run scripts/setup.sh}@db:5432/mayocspm
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Run scripts/setup.sh}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      AWS_EC2_METADATA_DISABLED: ${AWS_EC2_METADATA_DISABLED:-true}
+    volumes: ['worker-state:/data']
+    depends_on: {app: {condition: service_healthy}}
+    mem_limit: 512m
+    cpus: 0.5
+  db:
+    image: postgres:16.13-alpine
+    environment:
+      POSTGRES_USER: mayocspm
+      POSTGRES_DB: mayocspm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.sh}
+    command: ['postgres', '-c', 'shared_buffers=64MB', '-c', 'max_connections=30', '-c', 'max_wal_size=128MB', '-c', 'log_statement=none']
+    volumes: ['database:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mayocspm -d mayocspm']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 96
+    security_opt: ['no-new-privileges:true']
+    logging: *logging
+volumes:
+  database:
+  app-state:
+  worker-state:

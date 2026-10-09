@@ -1,0 +1,12 @@
+# Use: docker compose -f compose.yaml -f deploy/compose.external-db.yaml up -d
+# Requires Docker Compose 2.24.4+ for !reset and !override.
+services:
+  db:
+    profiles: ['unused-local-database']
+  app:
+    depends_on: !reset {}
+    environment:
+      DATABASE_URL: ${EXTERNAL_DATABASE_URL:?Set a TLS PostgreSQL URL with sslmode=verify-full}
+  worker:
+    environment:
+      DATABASE_URL: ${EXTERNAL_DATABASE_URL:?Set a TLS PostgreSQL URL with sslmode=verify-full}

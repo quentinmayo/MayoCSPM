@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: MayoCSPM bounded metadata collector role. No data-plane reads, snapshots, or image pulls.
+Parameters:
+  CollectorRoleName:
+    Type: String
+    Default: MayoCSPMReadOnly
+    AllowedPattern: '[A-Za-z0-9+=,.@_-]{1,64}'
+  OperatorRoleArn:
+    Type: String
+    Description: Exact IAM role ARN of your self-hosted worker operator (not a wildcard or account root).
+    AllowedPattern: 'arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+'
+  ExternalId:
+    Type: String
+    Description: Server-generated external ID from the MayoCSPM connection.
+    AllowedPattern: 'mc-[a-f0-9]{48}'
+Resources:
+  CollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref CollectorRoleName
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref OperatorRoleArn
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalId
+      Policies:
+        - PolicyName: MayoCSPMConfigurationOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: RegionalConfigurationMetadata
+                Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeVolumes
+                  - rds:DescribeDBInstances
+                  - eks:ListClusters
+                  - eks:DescribeCluster
+                  - cloudtrail:DescribeTrails
+                  - cloudtrail:GetTrailStatus
+                  - iam:GetAccountSummary
+                Resource: '*'
+              - Sid: ListBucketsAndAccountSafeguards
+                Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                  - s3:GetAccountPublicAccessBlock
+                Resource: '*'
+              - Sid: BucketConfigurationOnly
+                Effect: Allow
+                Action:
+                  - s3:GetBucketLocation
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketVersioning
+                Resource: 'arn:aws:s3:::*'
+Outputs:
+  RoleArn:
+    Value: !GetAtt CollectorRole.Arn
+    Description: Enter this generated role ARN in the connection (see the onboarding guide).

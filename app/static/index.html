@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MayoCSPM · Understand your cloud</title><meta name="description" content="Open-source cloud inventory, posture checks, and exposure models. Self-hosted and configuration-only.">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/static/style.css"><script src="/static/app.js" defer></script></head>
+<body>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<section id="login-screen" class="login-layout">
+ <div class="login-story"><a class="brand" href="https://github.com/quentinmayo/MayoCSPM"><img src="/static/logo.svg" alt="">Mayo<span>CSPM</span></a>
+ <div><p class="eyebrow">YOUR CLOUD. YOUR CONTEXT.</p><h1>See what you have.<br>Know what matters.</h1><p class="lede">Cloud inventory, evidence-backed checks, and exposure models. Open source. Self-hosted. Built to stay within your budget.</p>
+ <div class="story-diagram"><span>GitHub</span><i>→</i><strong>Your cloud</strong><i>→</i><span>Clear priorities</span></div></div>
+ <p class="story-footer">Configuration metadata only · No disk snapshots · No image downloads</p></div>
+ <div class="login-form"><p class="eyebrow">WELCOME TO MAYOCSPM</p><h2>Your cloud, in focus.</h2><p>Sign in to your self-hosted instance.</p>
+ <form id="login-form"><label>Email<input name="email" type="email" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" maxlength="256" required></label><button class="primary" type="submit">Sign in <span>→</span></button></form>
+ <p class="fine">New installation? Run <code>bash scripts/setup.sh</code> in your clone to create the first account.</p>
+ <div class="login-links"><a href="https://github.com/quentinmayo/MayoCSPM">Source code ↗</a><a href="https://github.com/quentinmayo/MayoCSPM/blob/main/docs/DEPLOYMENT.md">Setup guide ↗</a></div><span class="preview-label">0.1 · Early preview</span></div>
+</section>
+<div id="application" class="app-layout" hidden>
+ <aside class="sidebar"><a class="brand" href="/"><img src="/static/logo.svg" alt="">Mayo<span>CSPM</span></a><span class="workspace-label">WORKSPACE</span><select id="workspace-picker" aria-label="Workspace"></select><button id="new-workspace" class="text-button">+ New workspace</button>
+ <nav id="navigation" aria-label="Main navigation"></nav><div class="sidebar-bottom"><div class="mode"><i></i> Self-hosted <span>Preview</span></div><a href="https://github.com/quentinmayo/MayoCSPM">GitHub ↗</a><a href="/docs" target="_blank" rel="noopener">API documentation ↗</a><button id="logout" class="text-button">Sign out</button></div></aside>
+ <main><header class="topbar"><button id="mobile-menu" aria-label="Toggle navigation">☰</button><div><span class="muted">Workspace</span><span class="slash">/</span><strong id="breadcrumb">Overview</strong></div><div class="account"><span id="role" class="chip"></span><span id="identity"></span><span class="avatar" id="avatar">Q</span></div></header>
+ <section class="content"><div id="page-heading" class="page-heading"></div><div id="demo-notice" class="notice" hidden>Synthetic demo data is present. These resources are examples, not observations from your AWS account.</div><div id="page-content"></div></section>
+ <footer class="app-footer"><span>MayoCSPM · Apache 2.0</span><span>Configuration is evidence. Reachability needs verification.</span><a href="https://buymeacoffee.com/quentinmayo">Support the project ↗</a></footer></main>
+</div>
+<dialog id="dialog"><button class="dialog-close" aria-label="Close dialog">×</button><div id="dialog-body"></div></dialog>
+</body></html>
