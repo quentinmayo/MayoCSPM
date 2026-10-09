@@ -41,7 +41,7 @@ services:
     mem_limit: 512m
     cpus: 0.5
   db:
-    image: ${POSTGRES_IMAGE:-public.ecr.aws/docker/library/postgres:16.13-alpine}
+    image: ${POSTGRES_IMAGE:-public.ecr.aws/docker/library/postgres:16.15-alpine}
     environment:
       POSTGRES_USER: mayocspm
       POSTGRES_DB: mayocspm
