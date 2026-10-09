@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt && \
     groupadd -g 10001 mayocspm && useradd -u 10001 -g mayocspm -M mayocspm && \
     mkdir /data && chown 10001:10001 /data
 COPY app app
+COPY LICENSE NOTICE /usr/share/licenses/mayocspm/
 RUN chmod -R a+rX app
 USER 10001:10001
 EXPOSE 8000
