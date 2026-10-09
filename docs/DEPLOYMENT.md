@@ -31,6 +31,12 @@ at 384 MiB/0.5 CPU. These are runtime limits, not build-time or filesystem quota
 Deploy one app and one worker. The worker owns AWS access; the controller never
 needs it. Use the [AWS guide](AWS.md) when you are ready to collect real metadata.
 
+Base images use Docker's official-library ECR Public mirror to avoid anonymous
+Docker Hub pull limits. This is an installation-time image fetch, separate from
+cloud inventory collection. You can set `POSTGRES_IMAGE` to an approved registry
+mirror/digest and build with `--build-arg PYTHON_IMAGE=your-approved-python-image`.
+No customer ECR repositories or layers are downloaded by the collector.
+
 ## External PostgreSQL
 
 Create a dedicated database/user, configure TLS with a trusted CA, and add

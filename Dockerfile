@@ -1,4 +1,5 @@
-FROM python:3.12-slim
+ARG PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.12-slim
+FROM ${PYTHON_IMAGE}
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MAYOCSPM_STATE_DIR=/data
 WORKDIR /app
 COPY requirements.txt .
