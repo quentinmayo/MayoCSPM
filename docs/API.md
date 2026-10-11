@@ -54,3 +54,29 @@ Browser authentication uses an HttpOnly cookie, and mutations require the exact
 configured Origin. API keys use the Authorization bearer header and do not need
 browser CSRF headers. API responses use `Cache-Control: no-store`. Do not pass
 credentials in URLs or query strings.
+
+## Browser and native identity
+
+`GET /api/auth/options` publicly reports enabled login methods and the fixed
+native callback URI; it does not expose client secrets. [Okta setup](OKTA.md)
+describes the server configuration and explicit account linking.
+
+| Endpoint | Purpose | Authentication |
+| --- | --- | --- |
+| `POST /api/auth/login` | Email/password browser session cookie | Public; exact Origin; password login enabled |
+| `POST /api/auth/mobile/login` | Email/password native bearer session | Public; rate limited; password login enabled |
+| `GET /api/auth/oidc/start` | Begin browser authorization; optional native `code_challenge` + `state` | Public; OIDC configured |
+| `GET /api/auth/oidc/callback` | Provider return; binding/state/PKCE/ID-token validation | One-use flow and binding cookie |
+| `POST /api/auth/mobile/exchange` | Exchange `{code, verifier}` for a native session | One-use handoff and PKCE proof |
+| `GET /api/auth/oidc/account` | Enabled/linked account settings | Browser/mobile session; not a workspace API key |
+| `POST /api/auth/oidc/link` | Explicitly bind Okta; body `{password}` | Browser session + exact Origin + current password |
+| `DELETE /api/auth/oidc/account` | Remove binding; body `{password}` | Same; password login must remain enabled |
+| `POST /api/auth/logout` | Revoke current credential | Current session/key; cookie mutations require Origin |
+| `POST /api/auth/sessions/revoke` | Revoke all current user's browser/mobile sessions | Browser/mobile session; API keys remain separate |
+
+Native login/exchange return `{token, expires_at, email}` without a cookie. Use the
+token only in the Authorization bearer header. It expires after 12 hours and
+inherits the user's current memberships; it is not a scoped 90-day automation
+key. Passwords and IdP tokens are not returned. MFA policy is enforced by Okta
+only when users sign in through it; local passwords can be disabled after links
+are verified. IdP logout and immediate IdP-driven local revocation are not implemented.

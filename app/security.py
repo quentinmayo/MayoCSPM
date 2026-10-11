@@ -36,7 +36,7 @@ def strong_password(value):
 def issue(db, user_id, kind="session", workspace_id=None, name="Browser"):
     token = "mc_" + secrets.token_urlsafe(32)
     row = Credential(user_id=user_id, workspace_id=workspace_id, kind=kind, name=name, digest=digest(token),
-                     expires=now() + (timedelta(hours=12) if kind == "session" else timedelta(days=90)))
+                     expires=now() + (timedelta(hours=12) if kind in ("session", "mobile") else timedelta(days=90)))
     db.add(row)
     db.flush()
     return token, row
@@ -115,3 +115,18 @@ def github_repo(value):
     if not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}", value) or ".." in value:
         raise ValueError("Use an owner/repository name on github.com")
     return value
+
+
+def password_login_enabled():
+    return os.getenv("PASSWORD_LOGIN_ENABLED", "true").lower() == "true"
+
+
+def password_user(request, db, identity, password):
+    if not password_login_enabled():
+        raise HTTPException(403, "Password sign-in is disabled on this instance")
+    login_limit(request, db, identity)
+    user = db.scalar(select(User).where(User.email == identity))
+    encoded = user.password if user else passwords.hash("unused-public-timing-placeholder")
+    if not verify_password(encoded, password) or not user:
+        raise HTTPException(401, "Email or password is incorrect")
+    return user

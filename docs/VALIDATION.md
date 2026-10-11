@@ -77,3 +77,23 @@ check, not a complete accessibility audit.
 
 No billed service, hosted customer signup, multi-customer SaaS security claim,
 production-readiness certification or Wiz feature/price parity is implied.
+
+## Identity and native app preview, 2026-10-11
+
+Okta OIDC and the iOS/Android app source are implemented in the 0.2 preview.
+The preexisting full suite plus identity tests passed against SQLite and actual
+PostgreSQL 16.15. Twenty-six identity cases cover signed ID-token validation,
+explicit linking (no email-only owner takeover), cookie/state binding, expiry and
+replay, SSO-only mode, unlinking, native PKCE handoff, role/membership changes,
+password-login policy, session revocation and API-key separation. The provider is
+an RSA-signed test double; no real Okta tenant, MFA policy or assignment is claimed
+validated.
+
+Mobile TypeScript, Expo ESLint, four network/callback security tests, 21 Expo
+compatibility checks and production bundle exports for **both** platforms passed.
+Native compilation, device interaction, production signing and store submission
+are separate checks; bundle exports alone are not installable apps. Exact native
+build results are recorded when those checks finish. Two unfixed upstream mobile
+build-tool advisories remain documented in [mobile dependency review](MOBILE.md),
+with expiring exceptions and CI rejection of additional advisories. The Python
+runtime dependency audit remains clean at this check.

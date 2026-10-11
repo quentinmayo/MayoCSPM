@@ -65,12 +65,14 @@ are included. [All nine captures](docs/SCREENSHOTS.md).
 | Optional ASPM input | GitHub code-scanning/Dependabot alert APIs; SARIF 2.1.0 import, 1,000 results / 2 MiB |
 | Continuous collection | Manual scans or 1–168 hour schedules; durable jobs, worker leases, coverage reporting |
 | Access | Workspaces; owner/admin/analyst/viewer; hashed and revocable 90-day API keys; audit trail |
+| Sign-in | Local passwords; optional Okta OIDC with explicit account linking and server-enforced workspace roles |
+| Mobile | Native iOS/Android source; inventory, risk evidence, exposure context, scan history, role-checked scans |
 | Data location | Local PostgreSQL by default; external PostgreSQL overlay; SQLite for development/tests |
 
 **This is an early preview, not Wiz feature parity.** There is no workload disk
 inspection, ECR image download, exploit verification, full IAM entitlement analysis,
 DSPM, real-time event ingestion, certified compliance assessment, or automated
-cloud remediation. OAuth/LDAP/MFA, advanced query languages, additional clouds,
+cloud remediation. LDAP, local MFA/recovery, advanced query languages, additional clouds,
 and schema upgrade migrations remain on the [roadmap](docs/ROADMAP.md).
 
 ## A deliberate collection budget
@@ -115,6 +117,7 @@ reports discard matched snippets and messages; repository code is not executed.
 - [Collection, resource limits, and retention](docs/DATA-BUDGET.md)
 - [AWS role setup](docs/AWS.md) · [GitHub integrations](docs/GITHUB.md)
 - [Architecture and threat boundaries](docs/ARCHITECTURE.md)
+- [Okta sign-in and policy](docs/OKTA.md) · [iOS and Android apps](docs/MOBILE.md)
 - [API usage](docs/API.md) · [Security policy](SECURITY.md)
 - [Validation evidence and limitations](docs/VALIDATION.md) · [Roadmap](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)

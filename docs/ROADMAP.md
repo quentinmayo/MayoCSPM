@@ -34,7 +34,10 @@ inventory/query/exposure contract stays available in the Apache-2.0 engine.
 
 ## Identity and ecosystem
 
-- OIDC/OAuth, LDAPS, MFA and recovery; access-matrix and tenant-boundary tests.
+- Okta OIDC and native iOS/Android foundations are implemented; validate a real
+  tenant, production signing and store distribution before organizational rollout.
+- Okta group mapping/SCIM and immediate IdP revocation; LDAPS, local MFA and recovery.
+- Native graphical exposure views, push alerts and verified universal/app links.
 - Restricted OPA/Rego risk policies with resource limits and no network builtins.
 - Additional clouds and Kubernetes posture after AWS coverage is dependable.
 - Optional, explicitly enabled AI summaries with an operator-chosen local model.

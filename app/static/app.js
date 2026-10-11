@@ -46,7 +46,13 @@ async function loadWorkspaces() {
  $('#workspace-picker').innerHTML = allWorkspaces.map(w => `<option value="${w.id}">${e(w.name)}</option>`).join('');
  if (workspace) { $('#workspace-picker').value = workspace.id; $('#role').textContent = workspace.role; }
 }
+async function authOptions() {
+ try { const options=await api('/api/auth/options'); $('#oidc-signin').hidden=!options.oidc_enabled; $('#login-form').hidden=!options.password_enabled;
+  if(new URLSearchParams(location.search).get('auth_error')){const message=$('#auth-message');message.hidden=false;message.textContent='Okta sign-in failed. Use your existing account to link Okta in Sign-in & devices, or try again.';history.replaceState(null,'',location.pathname);}
+ } catch { $('#auth-message').hidden=false;$('#auth-message').textContent='Sign-in configuration could not be loaded. Refresh to try again.'; }
+}
 async function start() {
+ await authOptions();
  try {
   const me = await api('/api/me'); $('#identity').textContent = me.email; $('#avatar').textContent = me.email.slice(0,2).toUpperCase();
   await loadWorkspaces(); $('#login-screen').hidden = true; $('#application').hidden = false;
@@ -121,6 +127,8 @@ function connectionForm() {
  modal(`<h2>Add a connection</h2><p>Start with a small collection scope. Credentials stay encrypted on this instance.</p><form id="connection-form"><label>Name<input name="name" maxlength="120" required placeholder="Production AWS"></label><label>Source<select name="kind" id="connection-kind"><option value="aws">AWS configuration metadata</option><option value="github">GitHub security alerts</option><option value="sarif">Upload SARIF repository reports</option><option value="demo">Synthetic demo data</option></select></label><div id="aws-fields"><label>Role ARN<input name="role_arn" placeholder="arn:aws:iam::123456789012:role/MayoCSPMReadOnly"></label><p class="fine">Create this connection first to obtain its external ID, then deploy the role from <a href="https://github.com/quentinmayo/MayoCSPM/blob/main/deploy/aws/read-only-role.yaml" target="_blank" rel="noopener">the CloudFormation template</a>. Validation happens when you run the first scan.</p><label>Regions (comma separated, up to four)<input name="regions" value="us-east-1"></label><div class="form-grid"><label>Maximum resources<input name="max_resources" type="number" min="1" max="5000" value="1000"></label><label>Logical API-call budget<input name="max_api_calls" type="number" min="10" max="1000" value="300"></label></div><label>Services (comma separated)<input name="services" value="ec2,s3,rds,iam,cloudtrail,eks"></label></div><div id="github-fields" hidden><label>Repository<input name="repository" placeholder="owner/repository"></label><label id="token-field">Fine-grained GitHub token<input name="token" type="password" autocomplete="off"></label><p class="fine">Alert synchronization uses GitHub's available security APIs; access depends on repository settings and plan. SARIF uploads do not require a token or clone.</p></div><button type="submit" class="primary">Create connection</button></form>`);
 }
 async function action(name,id) {
+ if (name === 'identity-settings') { const info=await api('/api/auth/oidc/account');modal(`<h2>Sign-in & devices</h2><p>${info.enabled ? (info.linked ? 'Your Okta identity is linked. Workspace permissions are still managed here.' : 'Link your existing account to Okta. Your verified Okta email must match your account email.') : 'Okta is supported. An operator must configure this instance’s issuer and client credentials first.'}</p>${info.enabled && (!info.linked || info.password_enabled) ? `<form id="identity-form" data-unlink="${info.linked}"><label>Current account password<input type="password" name="password" autocomplete="current-password" maxlength="256" required></label><button class="primary">${info.linked ? 'Unlink Okta' : 'Link Okta'}</button></form>` : ''}<p class="fine">Mobile sessions last 12 hours. Sign out everywhere revokes browser and mobile sessions; API keys are managed separately.</p>${button('Sign out everywhere','revoke-sessions')}<p><a href="https://github.com/quentinmayo/MayoCSPM/blob/main/docs/MOBILE.md" target="_blank" rel="noopener">iOS and Android setup ↗</a></p>`);return; }
+ if (name === 'revoke-sessions') { await post('/api/auth/sessions/revoke');$('#dialog').close();showLogin();return; }
  if (name === 'refresh') return render();
  if (name === 'new-workspace') { modal('<h2>Create a workspace</h2><p>A workspace is the sharing boundary for your cloud inventory.</p><form id="workspace-form"><label>Name<input name="name" required maxlength="120" placeholder="My cloud"></label><button class="primary">Create workspace</button></form>'); return; }
  if (name === 'add-connection') return connectionForm();
@@ -146,6 +154,7 @@ document.addEventListener('click', async event => {
 document.addEventListener('submit',async event=>{
  const form=event.target;if(!form.id.endsWith('-form'))return;event.preventDefault();const submit=form.querySelector('[type="submit"],button');submit.disabled=true;
  try { const data=Object.fromEntries(new FormData(form));
+  if(form.id==='identity-form'){if(form.dataset.unlink==='true'){await api('/api/auth/oidc/account',{method:'DELETE',body:JSON.stringify(data)});form.reset();$('#dialog').close();toast('Okta unlinked. Existing sessions remain valid until revoked.');return;}const result=await post('/api/auth/oidc/link',data);form.reset();location.assign(result.url);return;}
   if(form.id==='login-form'){await post('/api/auth/login',data);form.reset();await start();return;}
   if(form.id==='workspace-form'){const w=await post('/api/workspaces',data);workspace=w;await loadWorkspaces();}
   if(form.id==='connection-form'){
@@ -174,5 +183,6 @@ $('#dialog .dialog-close').onclick=()=>{$('#dialog').close();$('#dialog-body').t
 $('#dialog').addEventListener('close',()=>{$('#dialog-body').textContent='';});
 $('#mobile-menu').onclick=()=>$('.sidebar').classList.toggle('open');
 $('#new-workspace').onclick=()=>action('new-workspace');
+$('#identity-settings').onclick=()=>action('identity-settings').catch(error=>toast(error.message));
 $('#logout').onclick=async()=>{try{await post('/api/auth/logout');}finally{showLogin();}};
 start();

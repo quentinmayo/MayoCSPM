@@ -150,3 +150,20 @@ class LoginWindow(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     attempts: Mapped[int] = mapped_column(default=0)
     started: Mapped[datetime] = mapped_column(default=now)
+
+
+class Identity(Base):
+    __tablename__ = "identities"
+    __table_args__ = (UniqueConstraint("issuer", "subject"), UniqueConstraint("issuer", "user_id"))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    issuer: Mapped[str] = mapped_column(String(600))
+    subject: Mapped[str] = mapped_column(String(255))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+
+class AuthFlow(Base):
+    __tablename__ = "auth_flows"
+    digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    payload: Mapped[dict] = mapped_column(JSON)
+    expires: Mapped[datetime]

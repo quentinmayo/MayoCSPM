@@ -32,6 +32,8 @@ from app.db import (
     now,
 )
 from app.github import parse_sarif
+from app.identity import router as identity_router
+from app.identity import validate_configuration
 from app.security import (
     ROLES,
     access,
@@ -40,11 +42,10 @@ from app.security import (
     encrypt,
     github_repo,
     issue,
-    login_limit,
+    password_user,
     passwords,
     require_origin,
     strong_password,
-    verify_password,
 )
 from app.service import audit, current_resources, effective_status, enqueue, graph, prune, save_snapshot
 
@@ -63,11 +64,12 @@ def bootstrap():
 
 @asynccontextmanager
 async def lifespan(_):
+    validate_configuration()
     bootstrap()
     yield
 
 
-app = FastAPI(title="MayoCSPM", version="0.1.0-preview", lifespan=lifespan,
+app = FastAPI(title="MayoCSPM", version="0.2.0-preview", lifespan=lifespan,
               description="Configuration-only cloud posture API. All cloud operations are read-only.")
 
 
@@ -193,12 +195,7 @@ def health(db=Depends(database)):
 @app.post("/api/auth/login")
 def login(body: Login, request: Request, response: Response, db=Depends(database)):
     require_origin(request)
-    login_limit(request, db, body.email)
-    user = db.scalar(select(User).where(User.email == body.email))
-    encoded = user.password if user else passwords.hash("unused-public-timing-placeholder")
-    verified = verify_password(encoded, body.password)
-    if not user or not verified:
-        raise HTTPException(401, "Email or password is incorrect")
+    user = password_user(request, db, body.email, body.password)
     token, _ = issue(db, user.id)
     db.commit()
     response.set_cookie("mayocspm_session", token, httponly=True, secure=os.getenv("PUBLIC_URL", "").startswith("https:"),
@@ -512,6 +509,10 @@ def checks():
              "reference": c.reference} for c in CHECKS]
 
 
+app.include_router(identity_router)
+
+
+@app.get("/workspace", include_in_schema=False)
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(STATIC / "index.html")

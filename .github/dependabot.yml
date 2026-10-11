@@ -1,5 +1,11 @@
 version: 2
 updates:
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule: {interval: weekly}
+    groups:
+      expo-sdk:
+        patterns: ['expo*', '@expo/*', 'react*', '@types/react*']
   - package-ecosystem: pip
     directory: /
     schedule: {interval: weekly}
