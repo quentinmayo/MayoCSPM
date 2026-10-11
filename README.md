@@ -40,8 +40,8 @@ port binds only to loopback. The database has no published port.
 
 ## Screenshots
 
-These are actual interface captures from the Docker/PostgreSQL deployment using
-only the built-in synthetic workspace. No real cloud inventory or credentials
+These are actual Chrome interface captures using only the built-in synthetic
+workspace, refreshed for the graphite theme. No real cloud inventory or credentials
 are included. [All nine captures](docs/SCREENSHOTS.md).
 
 ![Workspace overview with synthetic findings](docs/assets/screenshots/overview.png)

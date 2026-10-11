@@ -56,9 +56,10 @@ cover a subset; they are not a full Security Hub compliance implementation.
 
 The commercial project landing and private inspection console are deployed at
 [mayocspm.com](https://mayocspm.com/). Root DNS and trusted TLS were verified on
-2026-10-09. The running engine is pinned to public revision
+2026-10-09. The original deployment used public revision
 `a23f5b5459094114d6215f833d3782c74b7e6864`; commercial packaging has a separate
-private repository. Later documentation commits do not change that running pin.
+private repository. Exact release revisions are recorded in the private
+deployment ledger.
 
 Live Chrome checks exercised the landing-page request-budget calculator, all eight
 console views, and both landing/console at a 390px viewport without document
@@ -66,6 +67,13 @@ overflow or JavaScript errors. An authenticated synthetic scan completed through
 the deployed worker with five resources and seven findings. No real AWS inventory
 or operator credentials were uploaded to the hosted preview. Public registration
 is disabled; an operator provisions workspace access.
+
+On 2026-10-11, the graphite and teal theme passed Chrome checks of all eight
+workspace views, inventory filtering, resource inspection, landing-page calculator,
+and 390px mobile layouts without document overflow or JavaScript errors. Nine
+synthetic screenshots were refreshed from a local SQLite preview. The seven main
+text, button and status color pairs exceed a 4.5:1 contrast ratio; this is a palette
+check, not a complete accessibility audit.
 
 No billed service, hosted customer signup, multi-customer SaaS security claim,
 production-readiness certification or Wiz feature/price parity is implied.

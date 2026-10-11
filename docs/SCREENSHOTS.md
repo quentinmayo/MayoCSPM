@@ -1,7 +1,8 @@
 # Interface tour
 
-Captured from the actual Docker Compose / PostgreSQL application with Chrome,
-2026-10-09. All resource data is synthetic. `owner@example.com` is a test identity.
+Captured from the running application with Chrome, refreshed on 2026-10-11 for
+the graphite and teal theme. The screenshot session uses a local SQLite preview.
+All resource data is synthetic. `owner@example.com` is a test identity.
 Screenshots are not evidence of live customer risk or full provider coverage.
 
 | View | Purpose |
