@@ -34,7 +34,7 @@ The app stores only the instance, identity email, expiry, and 12-hour session to
 in protected device credential storage. iOS uses a this-device-only, unlocked
 keychain accessibility class; Android backups are disabled and SecureStore
 exclusions are configured. Passwords, Okta secrets, and cloud inventory are not
-persisted by the app. Results remain in memory while displayed; this is not an
+persisted by the app. Results remain in memory while the app runs; this is not an
 offline client or a device-management/DLP product.
 
 API requests omit browser cookies, use an Authorization header, reject redirects,
@@ -71,7 +71,8 @@ Use SDK-compatible packages through `npx expo install`, and commit changes to
 through `app.json` and Expo config plugins.
 
 For local development, install Xcode/CocoaPods for iOS or Android Studio, SDK and
-JDK for Android. Run `npm run ios` or `npm run android` to create a development
+JDK 21 for Android. Set `JAVA_HOME` to your JDK 21 installation; the bundled
+Android Studio JDK 25 triggered native CMake tooling errors in local testing. Run `npm run ios` or `npm run android` to create a development
 build and start Metro. Expo Go cannot validate this app's custom SSO callback.
 Development builds permit HTTP only for localhost/127.0.0.1, Android's `10.0.2.2`
 host bridge, and IPv6 loopback. Release builds require HTTPS. Do not relax TLS

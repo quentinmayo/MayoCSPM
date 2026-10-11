@@ -1,12 +1,12 @@
 # Validation evidence
 
-Checked 2026-10-09. This report separates local/fixture checks from real provider
+Initial checks 2026-10-09; identity/mobile update 2026-10-11. This report separates local/fixture checks from real provider
 collection. CheckMayo's earlier results do not validate this new application.
 
 | Check | Evidence |
 | --- | --- |
-| Automated core suite | 47 passed against actual PostgreSQL 16.15, including concurrent queue admission and GitHub response budgets |
-| SQLite development suite | Same suite; PostgreSQL-only concurrency case is skipped |
+| Automated core suite | 73 passed against actual PostgreSQL 16.15, including concurrent queue admission and GitHub response budgets |
+| SQLite development suite | 72 passed; PostgreSQL-only concurrency case is skipped |
 | Commercial packaging | Landing, console, static assets, protected API, and OpenAPI smoke test passed |
 | AWS SDK contract | Stubber tests exercised pagination, scope caps, denied permissions and S3 effective safeguards |
 | AWS live metadata | One selected region, six selected services; 16 resources and 51 logical collector calls; eight coverage scopes complete |
@@ -47,7 +47,7 @@ No cloud workload, volume snapshot or image download was needed.
 
 Services with no resources can return complete inventory coverage without having
 exercised every resource-detail API. GitHub live alert permissions/plan behavior,
-remote TLS PostgreSQL, LDAP/OIDC/MFA, independent security review, schema upgrades,
+remote TLS PostgreSQL, LDAP, real-tenant OIDC/MFA, independent security review, schema upgrades,
 restore rehearsals, disk exhaustion, EC2/ECS/EKS deployment, and a new Unraid VM
 deployment are not claimed tested. Preview rules and exposure models intentionally
 cover a subset; they are not a full Security Hub compliance implementation.
@@ -97,3 +97,11 @@ build results are recorded when those checks finish. Two unfixed upstream mobile
 build-tool advisories remain documented in [mobile dependency review](MOBILE.md),
 with expiring exceptions and CI rejection of additional advisories. The Python
 runtime dependency audit remains clean at this check.
+
+The live 0.2 server update passed trusted HTTPS, native bearer login/logout,
+viewer write denial, browser identity controls and mobile layout checks. Its
+existing five synthetic resources and seven findings survived the additive
+identity-table upgrade. A restricted PostgreSQL backup preceded deployment.
+App/worker/database CPU and memory caps, non-root app/worker processes and
+read-only root filesystems were preserved. Okta remains unconfigured on this
+inspection instance until an operator supplies and validates tenant settings.

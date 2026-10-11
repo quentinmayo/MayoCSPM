@@ -18,13 +18,13 @@ export default function SignIn() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <Screen title="MayoCSPM" subtitle="Your cloud. Your context. On your device.">
       <Card><Label>SELF-HOSTED CLOUD SECURITY</Label><Copy>Connect to your own instance to review inventory, risk evidence, exposure context, and scan results.</Copy></Card>
-      <Field label="Instance URL" value={base} onChangeText={value => { setBase(value); setOptions(null); }} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
-      <Button title="Check instance" disabled={busy} secondary onPress={() => act(async () => { const origin = serverOrigin(base, __DEV__); setOptions(await request(origin, '/api/auth/options')); setBase(origin); })} />
+      <Field testID="instance-url" label="Instance URL" value={base} onChangeText={value => { setBase(value); setOptions(null); }} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
+      <Button testID="check-instance" title="Check instance" disabled={busy} secondary onPress={() => act(async () => { const origin = serverOrigin(base, __DEV__); setOptions(await request(origin, '/api/auth/options')); setBase(origin); })} />
       <Notice text={error} />
       {options?.oidc_enabled && <Button title="Continue with Okta" disabled={busy} onPress={() => act(() => signInOkta(base))} />}
-      {options?.password_enabled && <Card><Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" textContentType="username" />
-        <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" maxLength={256} />
-        <Button title="Sign in" disabled={busy || !email || !password} onPress={() => act(() => signIn(base, email, password))} /></Card>}
+      {options?.password_enabled && <Card><Field testID="login-email" label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" textContentType="username" />
+        <Field testID="login-password" label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" textContentType="password" maxLength={256} />
+        <Button testID="sign-in" title="Sign in" disabled={busy || !email || !password} onPress={() => act(() => signIn(base, email, password))} /></Card>}
       {busy && <Loading />}<Copy muted>Sessions are stored in the device’s protected credential storage. Cloud inventory is loaded on demand and is not saved for offline use.</Copy>
     </Screen>
   </KeyboardAvoidingView></SafeAreaView>;

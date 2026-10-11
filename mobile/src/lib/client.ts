@@ -27,7 +27,7 @@ export async function request<T>(base: string, path: string, token?: string, bod
         ...(token ? { Authorization: 'Bearer ' + token } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body), credentials: 'omit', redirect: 'error', signal: controller.signal });
     if (response.redirected || response.url && new URL(response.url).origin !== base) throw new Error('Instance redirected an API request.');
-    if (Number(response.headers.get('content-length')) > 2 * 1024 * 1024) throw new Error('Instance response exceeded the mobile data budget.');
+    if (Number(response.headers.get('content-length')) > 2 * 1024 * 1024) { controller.abort(); throw new Error('Instance response exceeded the mobile data budget.'); }
     if (!response.body) throw new Error('Instance returned an empty API response.');
     const reader = response.body.getReader();
     const chunks: Uint8Array[] = [];

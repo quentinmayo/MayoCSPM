@@ -39,7 +39,8 @@ PASSWORD_LOGIN_ENABLED=true
 MOBILE_REDIRECT_URI=com.quentinmayo.mayocspm://auth
 ```
 
-Keep the existing `ENCRYPTION_KEY`. Never put the client secret in mobile source,
+Keep reverse-proxy logs from retaining authorization query strings or credential
+headers. Keep the existing `ENCRYPTION_KEY`. Never put the client secret in mobile source,
 GitHub, screenshots, or a support issue. Compose passes OIDC secrets only to the
 API app; the collector worker does not need them. Recreate the app after changing
 its environment (`docker compose up -d app`). Partial configuration fails startup
