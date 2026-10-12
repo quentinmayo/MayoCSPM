@@ -1,0 +1,69 @@
+appId: com.quentinmayo.mayocspm
+name: Native viewer security workflow
+---
+- launchApp:
+    clearState: false
+- tapOn:
+    id: instance-url
+- eraseText
+- inputText: "${MAESTRO_MAYOCSPM_QA_URL}"
+- hideKeyboard
+- tapOn:
+    id: check-instance
+- tapOn:
+    id: login-email
+- eraseText
+- inputText: "${MAESTRO_MAYOCSPM_QA_EMAIL}"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: login-password
+    direction: DOWN
+- tapOn:
+    id: login-password
+- inputText: "${MAESTRO_MAYOCSPM_QA_PASSWORD}"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: sign-in
+    direction: DOWN
+- tapOn:
+    id: sign-in
+- assertVisible: "Synthetic demo data.*"
+- assertVisible: "Example cloud.*viewer"
+- takeScreenshot: native-overview
+- tapOn: Inventory
+- assertVisible: Cloud inventory
+- assertVisible: "5 resources.*"
+- tapOn:
+    text: Inspect configuration
+    index: 0
+- assertVisible: "Hide configuration"
+- tapOn: Risks
+- assertVisible: Risk queue
+- tapOn:
+    text: Review evidence
+    index: 0
+- assertVisible: EVIDENCE
+- tapOn: Exposure
+- assertVisible: Exposure context
+- assertVisible: "OBSERVED.*"
+- tapOn: Scans
+- assertVisible: Scan history
+- assertNotVisible: Queue scan
+- tapOn: Account
+- assertVisible: Your account
+- assertVisible: "https://mayocspm.com"
+- stopApp
+- launchApp:
+    clearState: false
+- tapOn: Account
+- assertVisible: Your account
+- scrollUntilVisible:
+    element: Sign out everywhere
+    direction: DOWN
+- tapOn: Sign out everywhere
+- assertVisible: Check instance
+- stopApp
+- openLink: "com.quentinmayo.mayocspm://auth?code=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&state=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+- assertVisible: Check instance

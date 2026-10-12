@@ -5,5 +5,5 @@ import { useSession } from '../lib/session';
 // auth session validates/exchanges it; this route never trusts URL credentials.
 export default function AuthReturn() {
   const { session } = useSession();
-  return <Redirect href={session ? '/(tabs)' : '/'} />;
+  return <Redirect href={session ? '/(tabs)' : '/sign-in'} />;
 }

@@ -1,12 +1,8 @@
 import React from 'react';
-import { Redirect, Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
-import { color, Loading } from '../../components/ui';
-import { useSession } from '../../lib/session';
+import { color } from '../../components/ui';
 export default function Layout() {
-  const { ready, session } = useSession();
-  if (!ready) return <Loading />;
-  if (!session) return <Redirect href="/" />;
   return <Tabs screenOptions={{ headerStyle: { backgroundColor: color.surface }, headerTintColor: color.ink,
     headerTitle: 'MayoCSPM', tabBarActiveTintColor: color.accent, tabBarInactiveTintColor: color.muted,
     tabBarStyle: { backgroundColor: color.surface, borderTopColor: color.line }, tabBarLabelStyle: { fontSize: 10 } }}>

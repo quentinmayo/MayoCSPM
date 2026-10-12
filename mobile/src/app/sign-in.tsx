@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform } from 'react-native';
-import { Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Copy, Field, Label, Loading, Notice, Screen, color } from '../components/ui';
 import { useSession } from '../lib/session';
 import { serverOrigin } from '../lib/client';
 import { request } from '../lib/native-client';
 export default function SignIn() {
-  const { ready, session, signIn, signInOkta } = useSession();
+  const { ready, signIn, signInOkta } = useSession();
   const [base, setBase] = useState('https://mayocspm.com');
   const [email, setEmail] = useState(''); const [password, setPassword] = useState('');
   const [options, setOptions] = useState<{ password_enabled: boolean; oidc_enabled: boolean } | null>(null);
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   if (!ready) return <Loading />;
-  if (session) return <Redirect href="/(tabs)" />;
   const act = async (action: () => Promise<void>) => { setBusy(true); setError(''); try { await action(); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Sign-in failed.'); } finally { setBusy(false); setPassword(''); } };
   return <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <Screen title="MayoCSPM" subtitle="Your cloud. Your context. On your device.">
