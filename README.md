@@ -1,8 +1,10 @@
 <p align="center"><img src="docs/assets/banner.svg" alt="MayoCSPM — Understand your cloud. Own your security." width="100%"></p>
 
-<p align="center"><a href="https://github.com/quentinmayo/MayoCSPM/actions/workflows/ci.yml"><img src="https://github.com/quentinmayo/MayoCSPM/actions/workflows/ci.yml/badge.svg" alt="Validation"></a> <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Apache 2.0"> <img src="https://img.shields.io/badge/status-early%20preview-amber" alt="Early preview"></p>
+# OpenSource-MayoCSPM
 
-**MayoCSPM** is an open-source, self-hosted cloud security posture engine for
+<p align="center"><a href="https://github.com/quentinmayo/OpenSource-MayoCSPM/actions/workflows/ci.yml"><img src="https://github.com/quentinmayo/OpenSource-MayoCSPM/actions/workflows/ci.yml/badge.svg" alt="Validation"></a> <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Apache 2.0"> <img src="https://img.shields.io/badge/status-early%20preview-amber" alt="Early preview"></p>
+
+**OpenSource-MayoCSPM** is the open-source, self-hosted Mayo CSPM engine for
 developers and small teams. Collect bounded AWS configuration metadata, query your
 inventory, inspect risk evidence, and model resource relationships. Add GitHub
 security alerts or SARIF reports when application context is useful.
@@ -19,8 +21,8 @@ Python 3 on a machine with at least **2 CPUs, 2 GiB RAM, and 10 GiB free disk**.
 4 GiB RAM is more comfortable for building images. Then:
 
 ```sh
-git clone https://github.com/quentinmayo/MayoCSPM.git
-cd MayoCSPM
+git clone https://github.com/quentinmayo/OpenSource-MayoCSPM.git
+cd OpenSource-MayoCSPM
 bash scripts/setup.sh
 ```
 

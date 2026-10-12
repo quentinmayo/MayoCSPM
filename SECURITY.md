@@ -2,7 +2,7 @@
 
 This early preview is not a substitute for a complete cloud security program or
 independent assessment. Report vulnerabilities privately through
-[GitHub private vulnerability reporting](https://github.com/quentinmayo/MayoCSPM/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/quentinmayo/OpenSource-MayoCSPM/security/advisories/new).
 Do not post credentials, cloud account inventories, customer findings or source
 snippets in public issues.
 

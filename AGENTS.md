@@ -1,4 +1,4 @@
-# MayoCSPM
+# OpenSource-MayoCSPM
 
 This is a public, Apache-2.0 project. Do not copy private operational configuration,
 customer inventories, proprietary code, credentials or internal hostnames here.
