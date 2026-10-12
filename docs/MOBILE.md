@@ -70,6 +70,12 @@ Use SDK-compatible packages through `npx expo install`, and commit changes to
 `package-lock.json`. Native directories are generated and ignored; configure them
 through `app.json` and Expo config plugins.
 
+The iOS configuration enables the UIKit scene lifecycle through
+`expo-build-properties` (`ios.enableSceneSupport: true`). Xcode 27 / iOS 27
+requires this; the default SDK 57 application lifecycle compiles but crashes
+at startup. Keep this plugin setting when regenerating native projects. See
+[Expo's SDK 57 migration guidance](https://github.com/expo/fyi/blob/main/ios-scene-lifecycle.md#staying-on-sdk-57-with-xcode-27).
+
 For local development, install Xcode/CocoaPods for iOS or Android Studio, SDK and
 JDK 21 for Android. Set `JAVA_HOME` to your JDK 21 installation; the bundled
 Android Studio JDK 25 triggered native CMake tooling errors in local testing. Run `npm run ios` or `npm run android` to create a development

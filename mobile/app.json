@@ -29,6 +29,14 @@
         {
           "configureAndroidBackup": true
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
       ]
     ],
     "scheme": "com.quentinmayo.mayocspm"
