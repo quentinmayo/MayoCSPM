@@ -145,6 +145,17 @@ class Audit(Base):
     created: Mapped[datetime] = mapped_column(default=now)
 
 
+class SavedQuery(Base):
+    __tablename__ = "saved_queries"
+    __table_args__ = (UniqueConstraint("workspace_id", "name"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"))
+    name: Mapped[str] = mapped_column(String(120))
+    expression: Mapped[str] = mapped_column(Text)
+    created: Mapped[datetime] = mapped_column(default=now)
+    updated: Mapped[datetime] = mapped_column(default=now)
+
+
 class LoginWindow(Base):
     __tablename__ = "login_windows"
     key: Mapped[str] = mapped_column(String(64), primary_key=True)

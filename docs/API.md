@@ -22,6 +22,11 @@ curl --fail --silent --show-error \
 | `GET …/resources` | Current inventory query | Viewer |
 | `GET …/findings` | Evidence-backed findings and temporary acceptances | Viewer |
 | `GET …/graph` | Bounded configuration model with confidence labels | Viewer |
+| `GET …/graph/context` | Evidence neighborhood; `node_id`, `direction=in\|out\|both`, `depth=1..4` | Viewer |
+| `GET …/query/schema` | MQL entities, relationships, examples and limits | Viewer |
+| `POST …/query` | Execute `{expression}` against bounded stored graph | Viewer |
+| `GET …/queries` | Workspace shared queries | Viewer |
+| `POST/PUT/DELETE …/queries[/id]` | Save/update `{name, expression}` or delete; cap 50 | Analyst |
 | `GET …/jobs` | Scan status, coverage and assessed counts | Viewer |
 | `POST …/connections/{id}/scan` | Queue a scan; initial AWS validation requires admin | Analyst |
 | `POST …/connections/{id}/sarif` | Import a bounded report into a SARIF connection | Analyst |
@@ -80,3 +85,14 @@ inherits the user's current memberships; it is not a scoped 90-day automation
 key. Passwords and IdP tokens are not returned. MFA policy is enforced by Okta
 only when users sign in through it; local passwords can be disabled after links
 are verified. IdP logout and immediate IdP-driven local revocation are not implemented.
+
+## Graph query API
+
+Send `POST /api/workspaces/{id}/query` with a JSON `expression`, for example
+`MATCH (r:Resource) WHERE r.exposure = "potential" RETURN r LIMIT 100`.
+The response includes columns/rows, matched graph, coverage, warnings, truncation,
+counts completeness and execution statistics. A 422 identifies syntax/grammar
+errors without echoing the full submitted query. A 503 indicates graph concurrency
+admission or a database timeout; retry rather than sending parallel queries.
+Browser query POSTs require exact Origin despite being read-only. See
+[the language contract](QUERY-LANGUAGE.md) and [graph semantics](EXPOSURE-GRAPH.md).

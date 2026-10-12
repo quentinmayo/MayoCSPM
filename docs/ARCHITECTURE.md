@@ -45,6 +45,14 @@ missing resource or denied collector does not. Temporary risk acceptance require
 an administrator, a reason and a 1–90 day expiry, recorded in audit history.
 All risk scores expose deterministic severity and tag/configuration adjustments.
 
+The bounded graph is constructed from workspace-scoped SQL selections, with
+JSON size admission before loading metadata. The MQL parser produces an allowlisted
+read-only plan; it never interpolates user query text into SQL, evaluates code,
+or calls providers. Two graph reads per app process, traversal/byte/deadline limits,
+and explicit partial results bound resource use. Saved-query mutations require
+analyst access and are audited; queries cannot access connector credentials.
+See [MQL](QUERY-LANGUAGE.md) and [graph provenance](EXPOSURE-GRAPH.md).
+
 The graph records observed attachments, declared repository tags and candidate
 public configurations. It does not account for routes, NACLs, listeners, WAF,
 identity permission paths or exploitability. A node labeled `not_observed` means

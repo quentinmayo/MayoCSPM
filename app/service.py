@@ -4,7 +4,7 @@ from datetime import timedelta
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
-from app.checks import evaluate, public_ingress
+from app.checks import evaluate
 from app.db import Audit, Connection, Credential, Finding, Job, LoginWindow, Resource, now
 
 
@@ -122,43 +122,6 @@ def prune(db):
 
 
 def graph(db, workspace_id):
-    resources = list(db.scalars(current_resources(db, workspace_id).limit(1001)))
-    truncated = len(resources) > 1000
-    resources = resources[:1000]
-    nodes = [{"id": "internet", "label": "Internet", "kind": "context", "exposure": "context"}]
-    edges = []
-    groups = {(r.connection_id, r.region, r.uid.split("/")[-1]): r for r in resources if r.kind == "ec2.security_group"}
-    repo_nodes = {r.uid: r for r in resources if r.kind == "github.repository"}
-    for resource in resources:
-        data = resource.data
-        exposure = "not_observed"
-        if resource.kind == "ec2.security_group":
-            if data.get("ingress") is None:
-                exposure = "unknown"
-            elif public_ingress(data["ingress"], 22) or public_ingress(data["ingress"], 3389):
-                exposure = "potential"
-        elif resource.kind in ("rds.instance", "s3.bucket", "eks.cluster"):
-            key = {"rds.instance": "public", "s3.bucket": "policy_public", "eks.cluster": "public_unrestricted"}[resource.kind]
-            exposure = "unknown" if data.get(key) is None else "potential" if data[key] else "not_observed"
-        elif resource.kind == "ec2.instance" and data.get("public_ip"):
-            exposure = "potential"
-        node_id = f"{resource.connection_id}:{resource.uid}"
-        nodes.append({"id": node_id, "label": resource.name, "kind": resource.kind,
-                      "exposure": exposure, "region": resource.region})
-        if exposure == "potential":
-            edges.append({"source": "internet", "target": node_id, "relation": "public configuration",
-                          "confidence": "candidate", "limitations": "Routes, NACLs, listeners and application reachability are unverified"})
-        for group_id in data.get("security_groups", []):
-            group = groups.get((resource.connection_id, resource.region, group_id))
-            if group:
-                edges.append({"source": f"{group.connection_id}:{group.uid}", "target": node_id,
-                              "relation": "security group attached", "confidence": "observed"})
-        tags = data.get("tags", {})
-        repo = tags.get("repository", tags.get("source-repo", ""))
-        repo = repo.removeprefix("https://github.com/").removesuffix(".git").rstrip("/")
-        matched = repo_nodes.get("https://github.com/" + repo)
-        if matched:
-            edges.append({"source": f"{matched.connection_id}:{matched.uid}", "target": node_id,
-                          "relation": "explicit repository tag", "confidence": "declared"})
-    return {"nodes": nodes, "edges": edges, "truncated": truncated,
-            "model": "Configuration relationships; candidate exposure is not proof of a reachable attack path."}
+    from app.relationships import load_snapshot, resource_graph
+
+    return resource_graph(load_snapshot(db, workspace_id))

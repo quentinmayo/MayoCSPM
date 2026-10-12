@@ -20,7 +20,9 @@ inventory/query/exposure contract stays available in the Apache-2.0 engine.
 - IAM role/policy metadata with explicit, conservative entitlement modeling.
 - Serverless and ECR **repository metadata** where useful, without downloading
   layers or creating workload snapshots.
-- More query operators and saved queries, with cost/row limits.
+- MQL / 1 joins, bounded paths, counts, saved searches and the interactive evidence
+  explorer are implemented. Next: reviewed query planning, pagination, temporal
+  comparisons and additional modeled relationships without unbounded execution.
 - Per-source freshness and export reports, without calling uncertainty a pass.
 - More original posture rules and reviewed control mappings; no certification
   claims without independent validation.

@@ -60,8 +60,8 @@ are included. [All nine captures](docs/SCREENSHOTS.md).
 | --- | --- |
 | AWS inventory | EC2 instances, security groups, EBS volume metadata, S3 buckets, RDS instances, account IAM summary, CloudTrail summary, EKS clusters |
 | Posture rules | 15 original, inspectable checks with evidence, guidance, and AWS references |
-| Inventory queries | Resource type, region, literal name/ID search, tag key/value, bounded pagination |
-| Relationship model | Observed security-group attachments, explicit repository tags, candidate public configurations |
+| Inventory queries | MQL / 1: joined entity searches, tags, risk filters, bounded paths, counts, sorting and shared queries |
+| Relationship model | Interactive evidence graph: public configuration, SG references/attachments, EBS dependencies, CloudTrail S3 destinations and declared code links |
 | Optional ASPM input | GitHub code-scanning/Dependabot alert APIs; SARIF 2.1.0 import, 1,000 results / 2 MiB |
 | Continuous collection | Manual scans or 1–168 hour schedules; durable jobs, worker leases, coverage reporting |
 | Access | Workspaces; owner/admin/analyst/viewer; hashed and revocable 90-day API keys; audit trail |
@@ -72,8 +72,26 @@ are included. [All nine captures](docs/SCREENSHOTS.md).
 **This is an early preview, not Wiz feature parity.** There is no workload disk
 inspection, ECR image download, exploit verification, full IAM entitlement analysis,
 DSPM, real-time event ingestion, certified compliance assessment, or automated
-cloud remediation. LDAP, local MFA/recovery, advanced query languages, additional clouds,
+cloud remediation. LDAP, local MFA/recovery, full network/IAM path modeling, additional clouds,
 and schema upgrade migrations remain on the [roadmap](docs/ROADMAP.md).
+
+## Ask your cloud
+
+Use **Query explorer** to join resources and findings across collected accounts,
+then inspect the matched graph. **Exposure model** shows public configuration
+evidence and neighboring services with selectable paths, pan/zoom and confidence
+labels. No additional AWS calls are made when you search.
+
+```text
+MATCH (g:Resource)-[:SECURITY_GROUP_ATTACHED]->(r:Resource),
+      (g)-[:HAS_FINDING]->(f:Finding)
+WHERE f.status = "open" AND f.severity IN ["high", "critical"]
+RETURN g, r, f ORDER BY f.score DESC LIMIT 100
+```
+
+[Query language guide](docs/QUERY-LANGUAGE.md) · [Exposure and dependency guide](docs/EXPOSURE-GRAPH.md)
+
+![Joined resource and finding search](docs/assets/screenshots/query.png)
 
 ## A deliberate collection budget
 
@@ -116,6 +134,7 @@ reports discard matched snippets and messages; repository code is not executed.
 - [Deployment: Compose, external PostgreSQL, Unraid, AWS, Kubernetes](docs/DEPLOYMENT.md)
 - [Collection, resource limits, and retention](docs/DATA-BUDGET.md)
 - [AWS role setup](docs/AWS.md) · [GitHub integrations](docs/GITHUB.md)
+- [Queries and shared searches](docs/QUERY-LANGUAGE.md) · [Interactive exposure graph](docs/EXPOSURE-GRAPH.md)
 - [Architecture and threat boundaries](docs/ARCHITECTURE.md)
 - [Okta sign-in and policy](docs/OKTA.md) · [iOS and Android apps](docs/MOBILE.md)
 - [API usage](docs/API.md) · [Security policy](SECURITY.md)

@@ -4,7 +4,7 @@ MayoCSPM collects configuration metadata through an explicit list of AWS read AP
 It does **not** snapshot disks or workloads, copy ECR images, pull image layers,
 read S3 objects, retrieve secret values, read database contents, run repository
 code, or automatically remediate cloud resources. Even EBS collection is only
-volume identifiers, size, encryption state and selected tags.
+volume identifiers, size, encryption state, attached instance IDs and selected tags.
 
 ## Enforced limits
 
@@ -23,8 +23,16 @@ volume identifiers, size, encryption state and selected tags.
 | Workspace findings | 50,000; oversized writes roll back |
 | Scheduled collection interval | 1–168 hours, 0 pauses |
 | Manual scan or report import | At most one per connection per 5 minutes |
-| Graph API | First 1,000 resources, with truncation flag |
-| Diagram UI | First 35 graph resources, visibly disclosed |
+| Graph snapshot | First 1,000 resources, 2,000 findings, 10,000 relationships; explicit warnings |
+| Graph metadata | 4 MiB conservative JSON admission; field limit 65,536 SQL characters |
+| Graph API / context | 768 KiB / 384 KiB diagram payload; context 150 nodes / 300 edges |
+| Candidate paths | 4 hops, 20 paths, 10,000 search operations |
+| MQL query | 8,192 characters, 512 tokens, 3 joined patterns, 4 hops |
+| MQL evaluation | 25,000 operations, cooperative 2 seconds, 5,000 intermediate matches / 2 MiB projection accounting |
+| MQL response | 200 rows / 512 KiB, matched graph 100 nodes / 200 edges / 384 KiB |
+| Graph/query concurrency | 2 active reads per API process; excess work receives 503 |
+| Shared saved queries | 50 per workspace; query text up to 8,192 characters |
+| Diagram UI | Up to 100 matching nodes / 200 connections, visibly disclosed |
 | Resource / finding query page | 100 default / 200 hard cap |
 | HTTP request / SARIF | 2 MiB request, 1,000 SARIF results |
 | GitHub alert synchronization | 500 results total, 6 pages per alert category |
@@ -92,3 +100,9 @@ mount an existing project's database into this stack.
 Automatic disk-space admission control and tenant storage-byte quotas remain
 planned work; current safeguards are cardinality, report-size, runtime, and
 per-scan metadata bounds. A failed database write rolls back and fails the job.
+
+[MQL limits and unknown-value semantics](QUERY-LANGUAGE.md) apply to search and
+counts. PostgreSQL graph statements have a two-second timeout; SQLite uses a
+progress deadline. Traversal deadlines are cooperative, not HTTP wall-time guarantees.
+Byte limits can further reduce graph/results. Skipped metadata remains unknown,
+partial counts are lower bounds, and truncation never establishes absence of risk.

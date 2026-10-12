@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, select
+from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from app.checks import CHECKS
 from app.collectors import settings
@@ -25,6 +26,7 @@ from app.db import (
     Job,
     Member,
     Resource,
+    SavedQuery,
     Session,
     User,
     Workspace,
@@ -34,6 +36,8 @@ from app.db import (
 from app.github import parse_sarif
 from app.identity import router as identity_router
 from app.identity import validate_configuration
+from app.query import Parser, QueryError, execute, schema
+from app.relationships import GraphBusy, context_graph, graph_read, load_snapshot
 from app.security import (
     ROLES,
     access,
@@ -71,6 +75,18 @@ async def lifespan(_):
 
 app = FastAPI(title="MayoCSPM", version="0.2.0-preview", lifespan=lifespan,
               description="Configuration-only cloud posture API. All cloud operations are read-only.")
+
+
+@app.exception_handler(GraphBusy)
+async def graph_busy(_, __):
+    return JSONResponse({"detail": "Two graph reads are already running; retry shortly"}, status_code=503,
+                        headers={"Retry-After": "2"})
+
+
+@app.exception_handler(DBAPIError)
+async def database_unavailable(_, __):
+    return JSONResponse({"detail": "Database operation unavailable or exceeded its time budget; retry shortly"},
+                        status_code=503)
 
 
 @app.exception_handler(RequestValidationError)
@@ -123,6 +139,19 @@ class Login(Input):
 
 class Named(Input):
     name: str = Field(min_length=1, max_length=120)
+
+
+class GraphQuery(Input):
+    expression: str = Field(min_length=1, max_length=8192)
+
+
+class SavedQueryInput(GraphQuery, Named):
+    @field_validator("name")
+    @classmethod
+    def nonempty(cls, value):
+        if not value.strip():
+            raise ValueError("Name cannot be blank")
+        return value.strip()
 
 
 class MemberInput(Input):
@@ -433,7 +462,101 @@ def accept(workspace_id: int, finding_id: int, body: Acceptance, request: Reques
 @app.get("/api/workspaces/{workspace_id}/graph")
 def relationships(workspace_id: int, request: Request, db=Depends(database)):
     access(request, db, workspace_id)
-    return graph(db, workspace_id)
+    with graph_read(db):
+        return graph(db, workspace_id)
+
+
+@app.get("/api/workspaces/{workspace_id}/graph/context")
+def relationship_context(workspace_id: int, request: Request,
+                         node_id: str = Query(min_length=1, max_length=1200),
+                         direction: Literal["out", "in", "both"] = "both",
+                         depth: int = Query(default=2, ge=1, le=4), db=Depends(database)):
+    access(request, db, workspace_id)
+    with graph_read(db):
+        result = context_graph(load_snapshot(db, workspace_id), node_id, direction, depth)
+    if result is None:
+        raise HTTPException(404, "Node is unavailable in this workspace's bounded current graph")
+    return result
+
+
+@app.get("/api/workspaces/{workspace_id}/query/schema")
+def query_schema(workspace_id: int, request: Request, db=Depends(database)):
+    access(request, db, workspace_id)
+    return schema()
+
+
+@app.post("/api/workspaces/{workspace_id}/query")
+def query_graph(workspace_id: int, body: GraphQuery, request: Request, db=Depends(database)):
+    access(request, db, workspace_id)
+    try:
+        with graph_read(db):
+            return execute(db, workspace_id, body.expression)
+    except QueryError as exc:
+        raise HTTPException(422, str(exc)) from None
+    except DBAPIError:
+        raise HTTPException(503, "Inventory query unavailable; retry after the current scan or database operation") from None
+
+
+def saved_query_json(row):
+    return {"id": row.id, "name": row.name, "expression": row.expression,
+            "created": row.created, "updated": row.updated}
+
+
+@app.get("/api/workspaces/{workspace_id}/queries")
+def saved_queries(workspace_id: int, request: Request, db=Depends(database)):
+    access(request, db, workspace_id)
+    return [saved_query_json(row) for row in db.scalars(select(SavedQuery).where(
+        SavedQuery.workspace_id == workspace_id).order_by(SavedQuery.name).limit(50))]
+
+
+def validate_query(expression):
+    try:
+        Parser(expression).parse()
+    except QueryError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+
+def store_query(db, workspace_id, actor, body, query_id=None):
+    validate_query(body.expression)
+    # PostgreSQL serializes saves for each workspace, enforcing the shared cap.
+    db.scalar(select(Workspace).where(Workspace.id == workspace_id).with_for_update())
+    row = owned(db, SavedQuery, workspace_id, query_id) if query_id is not None else None
+    if row is None:
+        if db.scalar(select(func.count()).select_from(SavedQuery).where(SavedQuery.workspace_id == workspace_id)) >= 50:
+            raise HTTPException(409, "Workspace saved-query budget reached (50)")
+        row = SavedQuery(workspace_id=workspace_id)
+        db.add(row)
+    row.name, row.expression, row.updated = body.name, body.expression, now()
+    try:
+        db.flush()
+        audit(db, workspace_id, actor.email, "query.updated" if query_id else "query.created", {"query_id": row.id})
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "A saved query with this name already exists") from None
+    return saved_query_json(row)
+
+
+@app.post("/api/workspaces/{workspace_id}/queries", status_code=201)
+def create_query(workspace_id: int, body: SavedQueryInput, request: Request, db=Depends(database)):
+    actor, _ = access(request, db, workspace_id, "analyst")
+    return store_query(db, workspace_id, actor, body)
+
+
+@app.put("/api/workspaces/{workspace_id}/queries/{query_id}")
+def update_query(workspace_id: int, query_id: int, body: SavedQueryInput, request: Request, db=Depends(database)):
+    actor, _ = access(request, db, workspace_id, "analyst")
+    return store_query(db, workspace_id, actor, body, query_id)
+
+
+@app.delete("/api/workspaces/{workspace_id}/queries/{query_id}")
+def delete_query(workspace_id: int, query_id: int, request: Request, db=Depends(database)):
+    actor, _ = access(request, db, workspace_id, "analyst")
+    row = owned(db, SavedQuery, workspace_id, query_id)
+    db.delete(row)
+    audit(db, workspace_id, actor.email, "query.deleted", {"query_id": query_id})
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/workspaces/{workspace_id}/jobs")

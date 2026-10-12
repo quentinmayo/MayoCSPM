@@ -1,11 +1,12 @@
 'use strict';
 const $ = (s, root = document) => root.querySelector(s);
-const escapeHTML = value => { const n = document.createElement('span'); n.textContent = String(value ?? ''); return n.innerHTML; };
+const escapeHTML = value => { const n = document.createElement('span'); n.textContent = String(value ?? ''); return n.innerHTML.replaceAll('"','&quot;').replaceAll("'",'&#39;'); };
 const e = escapeHTML;
 const iconPaths = {
  overview:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
  inventory:'M3 6l9-4 9 4-9 4-9-4zm0 6 9 4 9-4M3 18l9 4 9-4',
  findings:'M12 3 2 21h20L12 3zm0 6v5m0 3v1',
+ query:'M4 5h16M4 12h10M4 19h6M17 15l4 4m-3-9a5 5 0 1 0 0 10 5 5 0 0 0 0-10',
  graph:'M6 6h1m10 0h1M6 18h1m10 0h1M7 6l10 12M7 18 17 6M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z',
  connections:'M8 3v4m8-4v4M6 7h12v5a6 6 0 0 1-12 0V7zm6 11v4',
  jobs:'M12 8v5l4 2M21 12a9 9 0 1 1-3-6M21 3v5h-5',
@@ -13,8 +14,9 @@ const iconPaths = {
  audit:'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5'
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${iconPaths[name] || iconPaths.inventory}"/></svg>`;
-const pages = {overview:['Overview','Your cloud posture, with the evidence behind it.'], inventory:['Cloud inventory','Query the configuration metadata collected from your accounts.'], findings:['Risk queue','Prioritize observed risks. Review evidence before making a change.'], graph:['Exposure model','Explore resource relationships and candidate public exposure.'], connections:['Connections','Choose what to collect, where to collect it, and how often.'], jobs:['Scan history','Every scan has a budget and an explicit coverage report.'], access:['Access & API keys','Workspace roles and revocable, scoped API access.'], audit:['Activity','Who changed what, and when.']};
+const pages = {overview:['Overview','Your cloud posture, with the evidence behind it.'], inventory:['Cloud inventory','Query the configuration metadata collected from your accounts.'], findings:['Risk queue','Prioritize observed risks. Review evidence before making a change.'], query:['Query explorer','Ask questions across resources, findings, and their relationships.'], graph:['Exposure model','Explore resource relationships and candidate public exposure.'], connections:['Connections','Choose what to collect, where to collect it, and how often.'], jobs:['Scan history','Every scan has a budget and an explicit coverage report.'], access:['Access & API keys','Workspace roles and revocable, scoped API access.'], audit:['Activity','Who changed what, and when.']};
 let workspace = null, allWorkspaces = [], page = 'overview', summary = null, connections = [], refreshTimer = null, searchTimer;
+let renderRevision = 0;
 let resourceOffset = 0, findingOffset = 0, resourceFilters = {}, findingStatus = 'open';
 const admin = () => ['owner','admin'].includes(workspace?.role);
 const analyst = () => ['owner','admin','analyst'].includes(workspace?.role);
@@ -31,7 +33,7 @@ async function api(path, options = {}) {
 }
 const route = suffix => `/api/workspaces/${workspace.id}/${suffix}`;
 const post = (path, value = {}) => api(path,{method:'POST',body:JSON.stringify(value)});
-function showLogin() { $('#login-screen').hidden = false; $('#application').hidden = true; clearInterval(refreshTimer); }
+function showLogin() { renderRevision++; window.MayoQueries?.reset(); workspace=null; $('#page-content').textContent=''; $('#login-screen').hidden = false; $('#application').hidden = true; clearInterval(refreshTimer); }
 function modal(html) { $('#dialog-body').innerHTML = html; $('#dialog').showModal(); }
 function empty(title, text, action = '') { return `<div class="card empty"><div class="service-icon">◇</div><h2>${e(title)}</h2><p>${e(text)}</p>${action}</div>`; }
 function button(text, action, cls = '', id = '') { return `<button class="${e(cls)}" data-action="${e(action)}" data-id="${e(id)}">${e(text)}</button>`; }
@@ -62,13 +64,16 @@ async function start() {
  } catch(error) { if (!$('#application').hidden) toast(error.message); }
 }
 async function render(loading = true) {
+ const revision=++renderRevision, currentPage=page, wid=workspace?.id;
  heading(); if (!workspace) { $('#page-content').innerHTML = empty('Start with a workspace','Keep cloud accounts, findings, and people together.',button('Create workspace','new-workspace','primary')); return; }
  if (loading) $('#page-content').innerHTML = '<div class="loading">Loading your workspace…</div>';
  try {
-  [summary,connections] = await Promise.all([api(route('summary')),api(route('connections'))]);
+  const result = await Promise.all([api(`/api/workspaces/${wid}/summary`),api(`/api/workspaces/${wid}/connections`)]);
+  if(revision!==renderRevision || wid!==workspace?.id || currentPage!==page)return;
+  [summary,connections]=result;
   $('#demo-notice').hidden = !summary.synthetic;
-  await ({overview:overview, inventory:inventory, findings:findings, graph:exposure, connections:connectionPage, jobs:jobs, access:accessPage, audit:activity})[page]();
- } catch (error) { $('#page-content').innerHTML = empty('Could not load this view',error.message,button('Try again','refresh')); }
+  await ({overview:overview, inventory:inventory, findings:findings, graph:exposure, query:queryExplorer, connections:connectionPage, jobs:jobs, access:accessPage, audit:activity})[page]();
+ } catch (error) { if(revision!==renderRevision || wid!==workspace?.id || currentPage!==page)return; $('#page-content').innerHTML = empty('Could not load this view',error.message,button('Try again','refresh')); }
 }
 async function overview() {
  const risks = (await api(route('findings?status=open&limit=5'))).items;
@@ -92,18 +97,16 @@ async function findings() {
  $('#page-content').innerHTML = `<div class="toolbar"><select id="finding-status" aria-label="Finding status">${['open','accepted','resolved'].map(s => `<option ${s === findingStatus ? 'selected' : ''}>${s}</option>`).join('')}</select><span class="fine muted">${data.total} findings · Ranked by explainable risk score</span></div><div class="card"><div class="table-scroll"><table><thead><tr><th>Risk</th><th>Finding</th><th>Severity</th><th>Status</th><th>Last observed</th><th></th></tr></thead><tbody>${data.items.map(f => `<tr><td><span class="score">${f.score}</span></td><td><strong>${e(f.title)}</strong><small>${e(f.check_id)} · ${e(f.resource_uid)}</small></td><td>${pill(f.severity)}</td><td>${pill(f.status)}</td><td>${e(date(f.last_seen))}</td><td>${button('Evidence','finding','',f.id)}</td></tr>`).join('') || '<tr><td colspan="6">No findings in this status. Scan coverage remains a separate measure.</td></tr>'}</tbody></table></div>${pagination(findingOffset,data.total,'finding')}</div>`;
 }
 async function exposure() {
- const g = await api(route('graph'));
- const meaningful = g.nodes.filter(n => n.id !== 'internet');
- let html = `<div class="notice">Potential exposure is based on configuration. Routing, network ACLs, listening services, and end-to-end reachability are not verified.</div>`;
- if (!meaningful.length) { $('#page-content').innerHTML = html + empty('No relationships to model yet','Run a scan to see collected resources and their connections.'); return; }
- const shown = [g.nodes[0], ...meaningful.slice(0,35)], positions = new Map();
- const height = Math.max(480,Math.ceil((shown.length-1)/3)*115+60);
- positions.set('internet',{x:110,y:height/2});
- shown.slice(1).forEach((n,i) => positions.set(n.id,{x:350+(i%3)*215,y:70+Math.floor(i/3)*115}));
- const lines = g.edges.filter(edge => positions.has(edge.source) && positions.has(edge.target)).map(edge => { const a=positions.get(edge.source),b=positions.get(edge.target); return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${edge.confidence === 'candidate' ? 'candidate' : ''}"><title>${e(edge.relation)} · ${e(edge.confidence)}</title></line>`; }).join('');
- const nodes = shown.map(n => { const p = positions.get(n.id); return `<g class="${e(n.exposure)}"><rect x="${p.x-80}" y="${p.y-27}" width="160" height="54" rx="10"/><text x="${p.x}" y="${p.y-3}" text-anchor="middle">${e(n.label.length>23 ? n.label.slice(0,22)+'…' : n.label)}</text><text class="node-kind" x="${p.x}" y="${p.y+13}" text-anchor="middle">${e(n.kind)} · ${e(n.exposure.replace('_',' '))}</text><title>${e(n.label)} — ${e(n.region || '')}</title></g>`; }).join('');
- html += `<div class="card"><div class="card-head"><h2>Configuration relationships</h2><span class="fine muted">${g.nodes.length-1} resources · ${g.edges.length} relationships</span></div><div class="graph-wrap"><svg role="img" aria-label="Cloud resource exposure relationship diagram" viewBox="0 0 900 ${height}" data-height="${height}">${lines}${nodes}</svg></div><div class="graph-legend"><span>— Observed attachment / declared repository</span><span>┄ Candidate public configuration</span><span>Not observed ≠ proven private</span></div><p class="graph-description">${e(g.model)} ${meaningful.length > 35 ? 'Diagram shows the first 35 resources; the API returns up to 1,000.' : ''} ${g.truncated ? 'The 1,000-resource graph budget was reached.' : ''}</p></div><div class="card"><div class="card-head"><h2>Relationship evidence</h2></div><div class="table-scroll"><table><thead><tr><th>Relationship</th><th>Confidence</th><th>Target</th></tr></thead><tbody>${g.edges.slice(0,100).map(edge => `<tr><td>${e(edge.relation)}</td><td>${pill(edge.confidence)}</td><td>${e(g.nodes.find(n => n.id === edge.target)?.label || edge.target)}</td></tr>`).join('')}</tbody></table></div></div>`;
- $('#page-content').innerHTML = html; $('.graph-wrap svg').style.height = `${height}px`;
+ const wid=workspace.id, host=document.createElement('div');
+ $('#page-content').replaceChildren(host);
+ const data=await api(`/api/workspaces/${wid}/graph`);
+ if(!host.isConnected || workspace?.id!==wid || page!=='graph')return;
+ window.MayoGraph.render(host,data,{api,endpoint:`/api/workspaces/${wid}/graph`,active:()=>workspace?.id===wid&&page==='graph'});
+}
+async function queryExplorer() {
+ const wid=workspace.id, host=document.createElement('div');
+ $('#page-content').replaceChildren(host);
+ await window.MayoQueries.render(host,{api,workspaceId:wid,canSave:analyst(),active:()=>workspace?.id===wid&&page==='query'});
 }
 async function connectionPage() {
  if (!connections.length) { $('#page-content').innerHTML = empty('Your cloud starts here','Add an AWS role for read-only metadata collection, import a repository report, or explore synthetic demo data.',admin() ? button('Add connection','add-connection','primary')+' '+button('Try demo data','demo') : 'Ask a workspace administrator to add a connection.'); return; }

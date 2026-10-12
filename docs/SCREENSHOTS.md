@@ -11,8 +11,14 @@ Screenshots are not evidence of live customer risk or full provider coverage.
 | [Overview](assets/screenshots/overview.png) | Inventory, open risk and coverage gaps |
 | [Inventory](assets/screenshots/inventory.png) | Stored metadata queries |
 | [Risk queue](assets/screenshots/findings.png) | Evidence and risk scores |
+| [Query explorer](assets/screenshots/query.png) | Joined resource/risk searches, shared queries and matched graph |
+| [Query on mobile](assets/screenshots/query-mobile.png) | Query editor and results at 390px |
 | [Exposure model](assets/screenshots/exposure.png) | Configuration-based relationships |
 | [Connections](assets/screenshots/connections.png) | Source scopes and schedules |
 | [Scan history](assets/screenshots/scans.png) | Worker results and coverage |
 | [Access](assets/screenshots/access.png) | Workspace members and API keys |
 | [Mobile](assets/screenshots/mobile.png) | 390px layout |
+
+Query and graph screenshots include additional **synthetic** CloudTrail destination
+and security-group reference fixtures to illustrate cross-service relationships.
+They do not represent deployed cloud resources.

@@ -163,13 +163,15 @@ class AWSCollector:
                                  {"ingress": [{"IpProtocol": rule.get("IpProtocol"), "FromPort": rule.get("FromPort"),
                                                "ToPort": rule.get("ToPort"),
                                                "IpRanges": [{"CidrIp": ip.get("CidrIp")} for ip in rule.get("IpRanges", [])],
-                                               "Ipv6Ranges": [{"CidrIpv6": ip.get("CidrIpv6")} for ip in rule.get("Ipv6Ranges", [])]}
+                                               "Ipv6Ranges": [{"CidrIpv6": ip.get("CidrIpv6")} for ip in rule.get("Ipv6Ranges", [])],
+                                               "UserIdGroupPairs": [{"GroupId": pair.get("GroupId"), "UserId": pair.get("UserId")} for pair in rule.get("UserIdGroupPairs", [])]}
                                               for rule in item.get("IpPermissions", [])] if "IpPermissions" in item else None,
                                   "vpc": item.get("VpcId"),
                                   "tags": self.tags(item.get("Tags", []))})
                     elif kind == "ec2.volume":
                         self.add(kind, item["VolumeId"], item["VolumeId"], region,
                                  {"encrypted": item.get("Encrypted"), "size_gib": item.get("Size"),
+                                  "attached_instances": [a["InstanceId"] for a in item.get("Attachments", []) if a.get("InstanceId")] if "Attachments" in item else None,
                                   "tags": self.tags(item.get("Tags", []))})
                     else:
                         for instance in item.get("Instances", []):
@@ -224,6 +226,7 @@ class AWSCollector:
                           "backup_days": item.get("BackupRetentionPeriod"),
                           "deletion_protection": item.get("DeletionProtection"),
                           "security_groups": [g["VpcSecurityGroupId"] for g in item.get("VpcSecurityGroups", [])],
+                          "vpc": item.get("DBSubnetGroup", {}).get("VpcId"),
                           "engine": item.get("Engine"), "tags": self.tags(item.get("TagList", []))})
 
     def iam(self, region):
@@ -249,7 +252,8 @@ class AWSCollector:
                     unknown = True
             self.add("cloudtrail.account", f"aws:{self.account}:cloudtrail", "Management trail coverage", "global",
                      {"logging_multiregion": True if active else None if unknown else False,
-                      "trail_count": len(trails), "tags": {}})
+                      "trail_count": len(trails),
+                      "storage_buckets": sorted({t["S3BucketName"] for t in trails if t.get("S3BucketName")}), "tags": {}})
 
     def eks(self, region):
         with self.section("eks", region):
@@ -263,6 +267,8 @@ class AWSCollector:
                                  vpc["endpointPublicAccess"] and "publicAccessCidrs" not in vpc) else bool(vpc.get("endpointPublicAccess") and any(
                                  cidr in ("0.0.0.0/0", "::/0") for cidr in vpc.get("publicAccessCidrs", []))),
                               "audit_logging": any("audit" in entry.get("types", []) for entry in enabled) if "logging" in cluster else None,
+                              "vpc": vpc.get("vpcId"),
+                              "security_groups": sorted(set(vpc.get("securityGroupIds", [])) | ({vpc["clusterSecurityGroupId"]} if vpc.get("clusterSecurityGroupId") else set())),
                               "tags": {k: v[:256] for k, v in cluster.get("tags", {}).items()
                                        if k.lower() in ("environment", "env", "repository", "source-repo", "team")}})
 
@@ -300,5 +306,5 @@ def demo_snapshot():
             "BlockPublicPolicy": False, "RestrictPublicBuckets": False}, "policy_public": True,
             "versioning": "Disabled", "tags": {}}},
         {"kind": "ec2.volume", "uid": "vol-demo-app", "name": "app-storage", "region": "us-east-1",
-         "data": {"encrypted": True, "size_gib": 24, "tags": {}}},
+         "data": {"encrypted": True, "size_gib": 24, "attached_instances": ["i-demo-web"], "tags": {}}},
     ], coverage=[{"service": "demo", "region": "us-east-1", "status": "complete", "synthetic": True}])

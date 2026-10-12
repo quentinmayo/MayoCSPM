@@ -5,8 +5,8 @@ collection. CheckMayo's earlier results do not validate this new application.
 
 | Check | Evidence |
 | --- | --- |
-| Automated core suite | 73 passed against actual PostgreSQL 16.15, including concurrent queue admission and GitHub response budgets |
-| SQLite development suite | 72 passed; PostgreSQL-only concurrency case is skipped |
+| Automated core suite | 129 passed against actual PostgreSQL 16.15, including concurrent queue admission and GitHub response budgets |
+| SQLite development suite | 128 passed; PostgreSQL-only concurrency case is skipped |
 | Commercial packaging | Landing, console, static assets, protected API, and OpenAPI smoke test passed |
 | AWS SDK contract | Stubber tests exercised pagination, scope caps, denied permissions and S3 effective safeguards |
 | AWS live metadata | One selected region, six selected services; 16 resources and 51 logical collector calls; eight coverage scopes complete |
@@ -15,7 +15,7 @@ collection. CheckMayo's earlier results do not validate this new application.
 | Repeat installation | Running `scripts/setup.sh` again preserved private configuration, the authenticated session, workspace and five synthetic resources |
 | Restart persistence | Restarted the live database, app and worker; login and the same five resources/seven findings remained available |
 | Runtime limits | Docker inspection confirmed app 384 MiB, worker 512 MiB, database 384 MiB; 0.5 CPU each; app/worker UID 10001 and read-only root filesystems |
-| Browser | Chrome login, all eight app views, inventory filtering and resource inspection passed; nine synthetic screenshots |
+| Browser | Chrome login, all nine app views, inventory filtering and resource inspection passed; nine synthetic screenshots |
 | Mobile | 390px viewport; no document overflow or JavaScript errors |
 | Live self-hosted preview | `https://mayocspm.com/`: trusted HTTPS, landing, console, Swagger, authentication boundaries and completed synthetic worker scan |
 | Live runtime isolation | Separate app, worker and database data directories on a verified mounted external drive; CPU/memory and rotated log limits inspected; no host ports or persistent AWS keys in these containers |
@@ -105,3 +105,27 @@ identity-table upgrade. A restricted PostgreSQL backup preceded deployment.
 App/worker/database CPU and memory caps, non-root app/worker processes and
 read-only root filesystems were preserved. Okta remains unconfigured on this
 inspection instance until an operator supplies and validates tenant settings.
+
+## Query and evidence graph update, 2026-10-11
+
+MQL / 1 supports entity joins, property/tag filters, unknown-value semantics,
+relationship directions, bounded variable paths, DISTINCT, COUNT/grouping,
+projection/sorting and analyst-managed shared queries. The interactive SVG
+explorer supports search, filtering, pan/zoom, keyboard selection, confidence and
+evidence inspection, dependency neighborhoods and candidate Internet paths.
+
+The expanded suite passes on SQLite (128 passed, one PostgreSQL-only skip) and
+PostgreSQL 16.15 (129 passed). New cases cover grammar rejection, joins, sorting,
+path direction/depth, missing metadata under negation, counts, source collisions,
+workspace/API-key isolation, role/Origin boundaries, shared-query validation/caps,
+S3 safeguards, CloudTrail destinations, account-bound SG references, expired
+acceptances, metadata/response/traversal limits and concurrency admission.
+
+A local headless Chromium session exercised joined results, counts, saving and
+loading queries, candidate S3 paths and log dependencies, edge evidence, node
+search, zoom/fit, keyboard edge activation, the 390px layout and a delayed query
+responses after workspace changes/logout, and HTML/attribute escaping in names.
+No document overflow or JavaScript errors were observed.
+New screenshots contain synthetic data only. Python dependency auditing reported
+no known advisories at check time. These checks do not validate full AWS network
+reachability, IAM attack paths, additional resource types or Wiz compatibility.
